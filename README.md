@@ -18,7 +18,7 @@ The suite implements four distinct algorithmic strategies, offering a comparativ
 | :--- | :--- | :--- | :--- |
 | **Minimax** | Deterministic | Alpha-Beta Pruning | **🏆 Optimal:** Perfect play at high depths, but computationally expensive. |
 | **Monte Carlo (MCTS)** | Probabilistic | Random Simulations (UCB1) | **🚀 Flexible:** Requires no heuristic knowledge, but performance scales strictly with simulation time. |
-| **A* Search** | Heuristic | Best-First Greedy | **⚡ Fast:** Evaluates immediate board value, but lacks long-term strategic foresight. |
+| **A Search** | Heuristic | Best-First Greedy | **⚡ Fast:** Evaluates immediate board value, but lacks long-term strategic foresight. |
 | **ID3 Tree** | Supervised | Entropy/Information Gain | **🧠 Learned:** Mimics human patterns from dataset, but limited by training data quality. |
 
 **Key Takeaway:** While Minimax with Alpha-Beta pruning provides the most consistent defensive play, the MCTS agent demonstrates surprising creativity in "trap" setups when given sufficient simulation time.
