@@ -32,7 +32,6 @@ def evaluate_window(window, piece):
 def evaluate_board(board, piece=2):
     score = 0
 
-
     center_col = [board[i][3] for i in range(6)]
     center_score = center_col.count(piece)
     score += center_score * 6
@@ -98,7 +97,6 @@ def score_position(board, piece):
     return score
 
 # A*
-
 
 def a_star(board):
     best_move = None
@@ -303,74 +301,74 @@ def monte_carlo_difficulty(board, player_num=1, simulations=100):
 
 # ID3 Decision Tree
 
-def calcular_entropia(coluna):
-    total = len(coluna)
-    contador = Counter(coluna)
-    entropia = 0
-    for classe in contador:
-        prob = contador[classe] / total
-        entropia -= prob * math.log2(prob)
-    return entropia
+def calculate_entropy(column):
+    total = len(column)
+    counts = Counter(column)
+    entropy = 0
+    for class_val in counts:
+        prob = counts[class_val] / total
+        entropy -= prob * math.log2(prob)
+    return entropy
 
-def ganho_informacao(df, atributo, alvo):
-    entropia_total = calcular_entropia(df[alvo])
-    valores_unicos = df[atributo].unique()
-    entropia_atributo = 0
+def information_gain(df, attribute, target):
+    total_entropy = calculate_entropy(df[target])
+    unique_values = df[attribute].unique()
+    attribute_entropy = 0
 
-    for valor in valores_unicos:
-        subconjunto = df[df[atributo] == valor]
-        peso = len(subconjunto) / len(df)
-        entropia_atributo += peso * calcular_entropia(subconjunto[alvo])
+    for value in unique_values:
+        subset = df[df[attribute] == value]
+        weight = len(subset) / len(df)
+        attribute_entropy += weight * calculate_entropy(subset[target])
 
-    ganho = entropia_total - entropia_atributo
-    return ganho
+    gain = total_entropy - attribute_entropy
+    return gain
 
-def id3(df, atributos, alvo):
-    classes = df[alvo].unique()
+def id3(df, attributes, target):
+    classes = df[target].unique()
     if len(classes) == 1:
         return classes[0]
-    if len(atributos) == 0:
-        return df[alvo].mode()[0]
+    if len(attributes) == 0:
+        return df[target].mode()[0]
 
-    ganhos = {atrib: ganho_informacao(df, atrib, alvo) for atrib in atributos}
-    melhor_atributo = max(ganhos, key=ganhos.get)
+    gains = {attr: information_gain(df, attr, target) for attr in attributes}
+    best_attribute = max(gains, key=gains.get)
 
-    arvore = {melhor_atributo: {}}
-    valores_unicos = df[melhor_atributo].unique()
+    tree = {best_attribute: {}}
+    unique_values = df[best_attribute].unique()
 
-    for valor in valores_unicos:
-        subconjunto = df[df[melhor_atributo] == valor]
-        if subconjunto.empty:
-            arvore[melhor_atributo][valor] = df[alvo].mode()[0]
+    for value in unique_values:
+        subset = df[df[best_attribute] == value]
+        if subset.empty:
+            tree[best_attribute][value] = df[target].mode()[0]
         else:
-            novos_atributos = [a for a in atributos if a != melhor_atributo]
-            arvore[melhor_atributo][valor] = id3(subconjunto, novos_atributos, alvo)
+            new_attributes = [a for a in attributes if a != best_attribute]
+            tree[best_attribute][value] = id3(subset, new_attributes, target)
 
-    return arvore
+    return tree
 
-def classificar_exemplo(exemplo, arvore):
-    if not isinstance(arvore, dict):
-        return arvore
-    atributo = next(iter(arvore))
-    valor = exemplo.get(atributo)
-    if valor not in arvore[atributo]:
-        return "Classe desconhecida"
-    ramo = arvore[atributo][valor]
-    return classificar_exemplo(exemplo, ramo)
+def classify_example(example, tree):
+    if not isinstance(tree, dict):
+        return tree
+    attribute = next(iter(tree))
+    value = example.get(attribute)
+    if value not in tree[attribute]:
+        return "Unknown"
+    branch = tree[attribute][value]
+    return classify_example(example, branch)
 
-def codificar_tabuleiro(board):
+def encode_board(board):
     return ''.join(str(cell) for row in board for cell in row)
 
-def prever_jogada_com_arvore(board, arvore):
-    estado = codificar_tabuleiro(board)
-    exemplo = {}
-    for i, valor in enumerate(estado):
-        exemplo[f"pos_{i}"] = valor
+def predict_move_with_tree(board, tree):
+    state = encode_board(board)
+    example = {}
+    for i, value in enumerate(state):
+        example[f"pos_{i}"] = value
 
-    jogada_prevista = classificar_exemplo(exemplo, arvore)
+    predicted_move = classify_example(example, tree)
 
     try:
-        col = int(jogada_prevista)
+        col = int(predicted_move)
         if 0 <= col < 7 and is_empty(board, col):
             return col
         else:
