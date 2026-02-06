@@ -12,9 +12,8 @@ from game_logic import (
 )
 from ai_algorithms import (
     minimax, monte_carlo, monte_carlo_difficulty, a_star, a_star_with_level,
-    id3, prever_jogada_com_arvore
+    id3, predict_move_with_tree
 )
-
 
 pygame.init()
 
@@ -23,21 +22,24 @@ HEIGHT = 720
 SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Connect 4 AI")
 
-
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 
+# Path handling for robustness
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 
 try:
-    BG = pygame.image.load("../assets/Background.png")
-    PLAY_IMG = pygame.image.load("../assets/Play Rect.png")
-    QUIT_IMG = pygame.image.load("../assets/Quit Rect.png")
-    FONT_PATH = "../assets/font.ttf"
+    BG = pygame.image.load(os.path.join(ASSETS_DIR, "Background.png"))
+    PLAY_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "Play Rect.png"))
+    QUIT_IMG = pygame.image.load(os.path.join(ASSETS_DIR, "Quit Rect.png"))
+    FONT_PATH = os.path.join(ASSETS_DIR, "font.ttf")
 except FileNotFoundError:
-    print("Error: Assets not found.")
+    print("Error: Assets not found. Check the assets folder.")
     sys.exit()
 
 def get_font(size):
@@ -60,8 +62,6 @@ def draw_board(board):
             elif board[r][c] == 2:
                 pygame.draw.circle(SCREEN, YELLOW, (c * 182.8 + 91.4, 586 - r * 105), 52)
     
-    # Botão de voltar desenhado aqui para persistir durante o jogo, 
-    # mas a lógica de clique é gerida no loop do jogo.
     BACK_TEXT = get_font(40).render("BACK", True, "Black")
     SCREEN.blit(BACK_TEXT, (1100, 675))
     
@@ -151,7 +151,7 @@ def a_star_game():
                 turn = 0
                 draw_board(board)
             else:
-                print("Draw or error on IA")
+                print("Draw or error on AI")
                 game_over = True
 
     time.sleep(3)
@@ -334,12 +334,12 @@ def ia_vs_ia_game(ia1, ia2):
             row = check_next_empty_row(board, col)
             put_piece(board, row, col, player_id)
             if win(player_id, board):
-                print(f"IA {player_id} ({current_ia}) venceu!")
+                print(f"AI {player_id} ({current_ia}) wins!")
                 game_over = True
             turn = 1 - turn
             draw_board(board)
         else:
-            print("Erro ou Empate")
+            print("Error or Draw")
             game_over = True
             
     time.sleep(5)
@@ -349,16 +349,18 @@ def pr_game():
     if c4_tree_full is None:
         print("Tree not trained. Starting training...")
         try:
-            df = pd.read_csv("../data/dataset_connect4.csv")
+            # Using os.path to find the dataset correctly
+            df = pd.read_csv(os.path.join(DATA_DIR, "dataset_connect4.csv"))
             for i in range(42):
                 df[f"pos_{i}"] = df["estado"].str[i]
             df = df.drop(columns=["estado"])
             
             attributes = [f"pos_{i}" for i in range(42)]
+            # 'jogada' is the target column header in the CSV
             c4_tree_full = id3(df, attributes, "jogada")
-            print("Treino concluído.")
+            print("Training completed.")
         except Exception as e:
-            print(f"Erro ao carregar dataset: {e}")
+            print(f"Error loading dataset: {e}")
             return
 
     board = create_board()
@@ -385,7 +387,7 @@ def pr_game():
 
         if turn == 1 and not game_over:
             time.sleep(1)
-            col = prever_jogada_com_arvore(board, c4_tree_full)
+            col = predict_move_with_tree(board, c4_tree_full)
             if col is not None and is_empty(board, col):
                 row = check_next_empty_row(board, col)
                 put_piece(board, row, col, 2)
@@ -393,8 +395,6 @@ def pr_game():
                 turn = 0
                 draw_board(board)
     time.sleep(3)
-
-
 
 def a_star_difficulty_menu():
     while True:
